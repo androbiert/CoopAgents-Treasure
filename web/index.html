@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARL Q-Mix — Cooperative GridWorld Visualizer</title>
+    <meta name="description" content="Interactive visualization of Multi-Agent Reinforcement Learning with QMIX on a Cooperative GridWorld environment.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Ambient background particles -->
+    <div class="ambient-bg" id="ambient-bg"></div>
+
+    <div class="app-shell">
+        <!-- Top Nav Bar -->
+        <header class="topbar" id="topbar">
+            <div class="topbar-left">
+                <div class="logo-mark">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect x="2" y="2" width="10" height="10" rx="3" fill="#a78bfa"/>
+                        <rect x="16" y="2" width="10" height="10" rx="3" fill="#f472b6"/>
+                        <rect x="2" y="16" width="10" height="10" rx="3" fill="#34d399"/>
+                        <rect x="16" y="16" width="10" height="10" rx="3" fill="#fbbf24" opacity="0.6"/>
+                    </svg>
+                </div>
+                <div class="topbar-title">
+                    <h1>Q-Mix Explorer</h1>
+                    <span class="topbar-subtitle">Multi-Agent Reinforcement Learning · Cooperative GridWorld</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="status-chip" id="status-chip">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Prêt</span>
+                </div>
+                <div class="speed-control">
+                    <label for="speed-select">Vitesse</label>
+                    <select id="speed-select">
+                        <option value="1200">0.5×</option>
+                        <option value="600" selected>1×</option>
+                        <option value="300">2×</option>
+                        <option value="150">4×</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left Panel — Agents & Metrics -->
+            <aside class="panel panel-left" id="panel-left">
+                <!-- Agent A Card -->
+                <div class="agent-card agent-card-a" id="card-agent-a">
+                    <div class="agent-card-header">
+                        <div class="agent-avatar avatar-a"><img src="/images/Blue_agent.png" alt="Agent A"></div>
+                        <div class="agent-card-info">
+                            <span class="agent-name">Agent Alpha</span>
+                            <span class="agent-role">Explorateur</span>
+                        </div>
+                    </div>
+                    <div class="agent-card-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Position</span>
+                            <span class="stat-value mono" id="pos-a">(0, 0)</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Dernière Action</span>
+                            <span class="stat-value mono" id="action-a">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent B Card -->
+                <div class="agent-card agent-card-b" id="card-agent-b">
+                    <div class="agent-card-header">
+                        <div class="agent-avatar avatar-b"><img src="/images/red_agent.png" alt="Agent B"></div>
+                        <div class="agent-card-info">
+                            <span class="agent-name">Agent Beta</span>
+                            <span class="agent-role">Collecteur</span>
+                        </div>
+                    </div>
+                    <div class="agent-card-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Position</span>
+                            <span class="stat-value mono" id="pos-b">(0, 6)</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Dernière Action</span>
+                            <span class="stat-value mono" id="action-b">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card" id="metric-step">
+                        <div class="metric-icon">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        </div>
+                        <div class="metric-body">
+                            <span class="metric-label">Étape</span>
+                            <span class="metric-value mono" id="val-step">0</span>
+                        </div>
+                    </div>
+                    <div class="metric-card" id="metric-reward">
+                        <div class="metric-icon icon-reward">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        </div>
+                        <div class="metric-body">
+                            <span class="metric-label">Récompense</span>
+                            <span class="metric-value mono" id="val-reward">0.0</span>
+                        </div>
+                    </div>
+                    <div class="metric-card" id="metric-door">
+                        <div class="metric-icon icon-door">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+                        </div>
+                        <div class="metric-body">
+                            <span class="metric-label">Porte</span>
+                            <span class="metric-value" id="val-door">
+                                <span class="door-badge closed">Fermée</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="metric-card" id="metric-plate">
+                        <div class="metric-icon icon-plate">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                        </div>
+                        <div class="metric-body">
+                            <span class="metric-label">Plaque</span>
+                            <span class="metric-value" id="val-plate">
+                                <span class="plate-badge inactive">Inactive</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend-card">
+                    <h3 class="legend-title">Légende</h3>
+                    <div class="legend-grid">
+                        <div class="legend-item"><span class="legend-swatch swatch-agent-a"></span>Agent A</div>
+                        <div class="legend-item"><span class="legend-swatch swatch-agent-b"></span>Agent B</div>
+                        <div class="legend-item"><span class="legend-swatch swatch-plate"></span>Plaque</div>
+                        <div class="legend-item"><span class="legend-swatch swatch-treasure"></span>Trésor</div>
+                        <div class="legend-item"><span class="legend-swatch swatch-wall"></span>Mur</div>
+                        <div class="legend-item"><span class="legend-swatch swatch-door"></span>Porte</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center — Grid Visualizer -->
+            <main class="viewport" id="viewport">
+                <div class="grid-wrapper">
+                    <div class="grid-container" id="grid-container">
+                        <!-- Grid rendered by JS -->
+                    </div>
+                    <!-- Coordinate labels rendered by JS -->
+                    <div class="coord-labels-x" id="coord-labels-x"></div>
+                    <div class="coord-labels-y" id="coord-labels-y"></div>
+                </div>
+
+                <!-- Episode Selector Bar -->
+                <div class="episode-bar" id="episode-bar">
+                    <div class="episode-bar-header">
+                        <div class="episode-source-selector">
+                            <button class="source-btn active" id="src-training" title="Épisodes d'entraînement">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                                <span>Entraînement</span>
+                            </button>
+                            <button class="source-btn" id="src-eval" title="Évaluation (trajectory.json)">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                                <span>Évaluation</span>
+                            </button>
+                        </div>
+                        <span class="episode-counter mono" id="episode-counter">— / —</span>
+                    </div>
+                    <div class="episode-nav">
+                        <button class="ep-nav-btn" id="ep-first" title="Premier épisode">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="11,17 6,12 11,7"/><polyline points="18,17 13,12 18,7"/></svg>
+                        </button>
+                        <button class="ep-nav-btn" id="ep-prev" title="Épisode précédent">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                        </button>
+                        <div class="episode-info-strip" id="episode-info-strip">
+                            <span class="ep-badge ep-badge-num" id="ep-num">Épisode —</span>
+                            <span class="ep-badge ep-badge-reward" id="ep-reward-badge">R: —</span>
+                            <span class="ep-badge ep-badge-steps" id="ep-steps-badge">Étapes: —</span>
+                            <span class="ep-badge ep-badge-success" id="ep-success-badge">—</span>
+                            <span class="ep-badge ep-badge-epsilon" id="ep-epsilon-badge">ε: —</span>
+                        </div>
+                        <button class="ep-nav-btn" id="ep-next" title="Épisode suivant">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+                        </button>
+                        <button class="ep-nav-btn" id="ep-last" title="Dernier épisode">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="13,17 18,12 13,7"/><polyline points="6,17 11,12 6,7"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Playback Bar -->
+                <div class="playback-bar" id="playback-bar">
+                    <div class="playback-controls">
+                        <button class="pb-btn" id="btn-reset" title="Rembobiner">
+                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 105.64-8.36L1 10"/></svg>
+                        </button>
+                        <button class="pb-btn" id="btn-prev" title="Étape précédente">
+                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="19,20 9,12 19,4"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                        </button>
+                        <button class="pb-btn pb-btn-play" id="btn-play" title="Lecture / Pause">
+                            <svg id="icon-play" width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                            <svg id="icon-pause" width="22" height="22" fill="currentColor" viewBox="0 0 24 24" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                        </button>
+                        <button class="pb-btn" id="btn-next" title="Étape suivante">
+                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="5,4 15,12 5,20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                        </button>
+                    </div>
+                    <div class="timeline-wrapper">
+                        <span class="timeline-label mono" id="tl-current">0</span>
+                        <input type="range" class="timeline-slider" id="timeline" min="0" max="100" value="0">
+                        <span class="timeline-label mono" id="tl-total">0</span>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Panel — Architecture & Info -->
+            <aside class="panel panel-right" id="panel-right">
+                <div class="arch-card">
+                    <h3 class="arch-title">Architecture QMIX</h3>
+                    <div class="arch-diagram" id="arch-diagram">
+                        <!-- QMIX Architecture SVG -->
+                        <svg viewBox="0 0 240 320" fill="none" xmlns="http://www.w3.org/2000/svg" class="arch-svg">
+                            <!-- Agent Networks -->
+                            <rect x="10" y="10" width="90" height="40" rx="8" class="arch-node node-agent"/>
+                            <text x="55" y="34" class="arch-text">Agent A (GRU)</text>
+                            
+                            <rect x="140" y="10" width="90" height="40" rx="8" class="arch-node node-agent"/>
+                            <text x="185" y="34" class="arch-text">Agent B (GRU)</text>
+
+                            <!-- Q values -->
+                            <rect x="20" y="80" width="70" height="30" rx="6" class="arch-node node-q"/>
+                            <text x="55" y="100" class="arch-text-sm">Q_a(τ,a)</text>
+                            
+                            <rect x="150" y="80" width="70" height="30" rx="6" class="arch-node node-q"/>
+                            <text x="185" y="100" class="arch-text-sm">Q_b(τ,a)</text>
+
+                            <!-- Lines to Mixing -->
+                            <line x1="55" y1="50" x2="55" y2="80" class="arch-line"/>
+                            <line x1="185" y1="50" x2="185" y2="80" class="arch-line"/>
+                            <line x1="55" y1="110" x2="120" y2="160" class="arch-line"/>
+                            <line x1="185" y1="110" x2="120" y2="160" class="arch-line"/>
+
+                            <!-- Mixing Network -->
+                            <rect x="60" y="150" width="120" height="50" rx="10" class="arch-node node-mix"/>
+                            <text x="120" y="172" class="arch-text">Mixing Net</text>
+                            <text x="120" y="190" class="arch-text-xs">Hypernetworks</text>
+
+                            <!-- State Input -->
+                            <rect x="75" y="240" width="90" height="30" rx="6" class="arch-node node-state"/>
+                            <text x="120" y="260" class="arch-text-sm">State s</text>
+                            <line x1="120" y1="240" x2="120" y2="200" class="arch-line arch-line-state" stroke-dasharray="4,3"/>
+
+                            <!-- Q_tot output -->
+                            <rect x="80" y="290" width="80" height="28" rx="6" class="arch-node node-qtot"/>
+                            <text x="120" y="308" class="arch-text-sm">Q_tot</text>
+                            <line x1="120" y1="200" x2="120" y2="290" class="arch-line"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Environment Info -->
+                <div class="env-card">
+                    <h3 class="env-title">Environnement</h3>
+                    <div class="env-details">
+                        <div class="env-row">
+                            <span class="env-key">Grille</span>
+                            <span class="env-val mono" id="env-size">7 × 7</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">Agents</span>
+                            <span class="env-val mono">2</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">Actions</span>
+                            <span class="env-val mono">5 (↑↓←→·)</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">Limite</span>
+                            <span class="env-val mono">100 étapes</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">Mur (col)</span>
+                            <span class="env-val mono" id="env-wall">3</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">Porte (y)</span>
+                            <span class="env-val mono" id="env-door-y">3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Training Hyperparameters -->
+                <div class="hyper-card">
+                    <h3 class="hyper-title">Hyperparamètres</h3>
+                    <div class="env-details">
+                        <div class="env-row">
+                            <span class="env-key">Algorithme</span>
+                            <span class="env-val mono">QMIX</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">RNN Hidden</span>
+                            <span class="env-val mono">64</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">Mix Embed</span>
+                            <span class="env-val mono">32</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">LR</span>
+                            <span class="env-val mono">5e-4</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-key">γ (gamma)</span>
+                            <span class="env-val mono">0.99</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
